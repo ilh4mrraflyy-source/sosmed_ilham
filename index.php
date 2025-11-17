@@ -310,7 +310,7 @@ $result = mysqli_query($conn, $q);
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid px-4">
-            <a class="navbar-brand fw-bold" href="index.php">Facebook</a>
+            <a class="navbar-brand fw-bold" href="index.php">Fesbuker</a>
 
             <!-- 🔍 SEARCH BAR -->
             <form class="d-flex mx-auto position-relative" role="search" onsubmit="return false;">

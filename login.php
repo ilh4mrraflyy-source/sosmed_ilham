@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <body class="bg-light d-flex align-items-center justify-content-center vh-100">
     <div class="card shadow p-4" style="width: 360px;">
-        <h3 class="text-center mb-4 fw-bold text-primary">Facebook</h3>
+        <h3 class="text-center mb-4 fw-bold text-primary">Fesbuker</h3>
         <?php if (!empty($error)) echo "<div class='alert alert-danger'>$error</div>"; ?>
         <form method="post">
             <input type="text" name="username" class="form-control mb-3" placeholder="Username" required>

@@ -207,7 +207,7 @@ $isIncomingRequest = mysqli_num_rows(mysqli_query($koneksi, "
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid px-4">
-            <a class="navbar-brand" href="../index.php">Facebook</a>
+            <a class="navbar-brand" href="../index.php">Fesbuker</a>
             <div class="d-flex">
                 <a href="../index.php" class="btn btn-light btn-sm me-2">Beranda</a>
                 <a href="../logout.php" class="btn btn-danger btn-sm">Keluar</a>

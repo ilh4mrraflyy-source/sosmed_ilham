@@ -45,15 +45,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!empty($_FILES['image']['name'])) {
       $imgName = time() . "_" . basename($_FILES["image"]["name"]);
       $target = "uploads/" . $imgName;
-      move_uploaded_file($_FILES["image"]["tmp_name"], $target);
+      if (move_uploaded_file($_FILES["image"]["tmp_name"], $target)) {
+        mysqli_query($conn, "INSERT INTO image (ImageName, Date) VALUES ('$imgName', '$date')");
+        $imageID = mysqli_insert_id($conn);
 
-      mysqli_query($conn, "INSERT INTO image (ImageName, Date) VALUES ('$imgName', '$date')");
-      $imageID = mysqli_insert_id($conn);
+        mysqli_query($conn, "INSERT INTO post (Date, Time, Text, UserName) VALUES ('$date', '$time', '$text', '$username')");
+        $postID = mysqli_insert_id($conn);
 
-      mysqli_query($conn, "INSERT INTO post (Date, Time, Text, UserName) VALUES ('$date', '$time', '$text', '$username')");
-      $postID = mysqli_insert_id($conn);
-
-      mysqli_query($conn, "INSERT INTO detailpost (PostID, ImageID, Comment) VALUES ($postID, $imageID, '')");
+        mysqli_query($conn, "INSERT INTO detailpost (PostID, ImageID, Comment) VALUES ($postID, $imageID, '')");
+      } else {
+        // gagal upload: tetap insert text tanpa image
+        mysqli_query($conn, "INSERT INTO post (Date, Time, Text, UserName) VALUES ('$date', '$time', '$text', '$username')");
+      }
     } else {
       mysqli_query($conn, "INSERT INTO post (Date, Time, Text, UserName) VALUES ('$date', '$time', '$text', '$username')");
     }
@@ -345,7 +348,336 @@ $result = mysqli_query($conn, $q);
             </ul>
         </div>
     </nav>
+    <!-- ================= STORIES BAR (paste after </nav> and before container-main) ================= -->
+    <style>
+    /* Styles stories */
+    .stories-bar {
+        background: transparent;
+        padding: 12px 20px;
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    }
 
+    .story-item {
+        width: 68px;
+        text-align: center;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .story-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: inline-block;
+        background-size: cover;
+        background-position: center;
+        padding: 3px;
+        box-sizing: border-box;
+        position: relative;
+    }
+
+    .story-ring {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        padding: 3px;
+        background: linear-gradient(45deg, #ff5a5f, #ff9a5a, #ffd15a, #5ac18e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .story-inner {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: white;
+        display: block;
+        overflow: hidden;
+    }
+
+    .story-inner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 50%;
+    }
+
+    .story-label {
+        margin-top: 6px;
+        display: block;
+        text-align: center;
+        color: var(--text);
+        font-weight: 600;
+        white-space: nowrap;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #storyUploader {
+        display: none;
+    }
+
+    /* viewer modal */
+    .story-modal {
+        position: fixed;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .story-modal .box {
+        width: 420px;
+        max-width: 95%;
+        background: transparent;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .story-modal .box img {
+        width: 100%;
+        height: auto;
+        display: block;
+        max-height: 80vh;
+        object-fit: contain;
+    }
+
+    .story-modal .meta {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .story-modal .meta img {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 255, 255, 0.15);
+        object-fit: cover;
+    }
+
+    .story-modal .closeBtn {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        color: white;
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+    .story-modal .progress {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.5);
+        width: 0%;
+        transition: width 0.1s linear;
+    }
+    </style>
+
+    <div class="stories-bar" id="storiesBar">
+        <div class="story-item" title="Buat Story">
+            <label for="storyUploader" style="cursor:pointer;">
+                <div class="story-avatar"
+                    style="background:#fff; display:flex;align-items:center;justify-content:center;">
+                    <div
+                        style="width:56px;height:56px;border-radius:50%;background:linear-gradient(45deg,#fff,#eee);display:flex;align-items:center;justify-content:center;border:2px dashed rgba(0,0,0,0.06);">
+                        <i class="fa-solid fa-plus" style="color:#1877f2;font-size:18px;"></i>
+                    </div>
+                </div>
+                <div class="story-label">Buat Cerita</div>
+            </label>
+            <form id="frmStoryUpload" method="post" action="modul/stories_upload.php" enctype="multipart/form-data"
+                style="display:none;">
+                <input type="file" id="storyUploader" name="story_img" accept="image/*"
+                    onchange="document.getElementById('frmStoryUpload').submit()">
+            </form>
+        </div>
+        <!-- Story items akan diisi oleh JS -->
+    </div>
+
+    <!-- VIEWER -->
+    <div class="story-modal" id="storyModal">
+        <div class="box">
+            <div class="progress" id="storyProgress"></div>
+            <div class="meta">
+                <img id="storyUserPhoto" src="" alt="">
+                <div>
+                    <div id="storyUserName" style="font-weight:700"></div>
+                    <div id="storyTime" style="font-size:12px;opacity:0.9"></div>
+                </div>
+            </div>
+            <div class="closeBtn" onclick="closeStory()">✕</div>
+            <img id="storyImage" src="" alt="">
+        </div>
+    </div>
+
+    <script>
+    let storiesData = []; // list users with items
+    let currentUserIdx = 0;
+    let currentStoryIdx = 0;
+    let progressInterval = null;
+
+    function loadStories() {
+        fetch('modul/stories_api.php').then(r => r.json()).then(data => {
+            storiesData = data || [];
+            renderStoriesBar();
+        }).catch(e => console.error(e));
+    }
+
+    function renderStoriesBar() {
+        const bar = document.getElementById('storiesBar');
+        // remove existing story-item except first (uploader)
+        Array.from(bar.querySelectorAll('.story-item')).forEach((el, i) => {
+            if (i > 0) el.remove();
+        });
+        storiesData.forEach((u, idx) => {
+            const username = u.user || 'Unknown';
+            const userPhoto = u.photo || '';
+            // path: index.php is in root so uploads are under 'uploads/'
+            const photo = userPhoto && userPhoto !== null ? (userPhoto.startsWith('http') ? userPhoto : (
+                'uploads/' + userPhoto)) : ('https://ui-avatars.com/api/?name=' + encodeURIComponent(
+                username) + '&background=1877f2&color=fff');
+            const html = document.createElement('div');
+            html.className = 'story-item';
+            html.innerHTML = `
+      <div class="story-avatar" data-idx="${idx}" onclick="openStory(${idx},0)">
+        <div class="story-ring">
+          <div class="story-inner"><img src="${photo}" alt=""></div>
+        </div>
+      </div>
+      <div class="story-label">${escapeHtml(username)}</div>
+    `;
+            bar.appendChild(html);
+        });
+    }
+
+    function openStory(userIdx, storyIdx) {
+        currentUserIdx = userIdx;
+        currentStoryIdx = storyIdx;
+        showStory();
+    }
+
+    function showStory() {
+        const modal = document.getElementById('storyModal');
+        if (!storiesData[currentUserIdx]) return closeStory();
+        const user = storiesData[currentUserIdx];
+        const item = (user.items && user.items[currentStoryIdx]) ? user.items[currentStoryIdx] : null;
+        if (!item) {
+            closeStory();
+            return;
+        }
+
+        const imgEl = document.getElementById('storyImage');
+        const nameEl = document.getElementById('storyUserName');
+        const photoEl = document.getElementById('storyUserPhoto');
+        const timeEl = document.getElementById('storyTime');
+
+        const userPhoto = user.photo || '';
+        photoEl.src = userPhoto ? (userPhoto.startsWith('http') ? userPhoto : 'uploads/' + userPhoto) :
+            'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.user || '') + '&background=1877f2&color=fff';
+
+        nameEl.textContent = user.user || 'Unknown';
+        timeEl.textContent = item.CreatedAt ? new Date(item.CreatedAt).toLocaleString() : '';
+        imgEl.src = item.ImageName ? ('uploads/' + item.ImageName) : '';
+
+        // mark viewed (if storyID exists)
+        if (item.StoryID) markViewed(item.StoryID);
+
+        modal.style.display = 'flex';
+        startProgress(() => {
+            // move to next story or next user
+            currentStoryIdx++;
+            if (!user.items || currentStoryIdx >= user.items.length) {
+                currentUserIdx++;
+                if (currentUserIdx >= storiesData.length) {
+                    closeStory();
+                    return;
+                }
+                currentStoryIdx = 0;
+            }
+            showStory();
+        });
+    }
+
+    function closeStory() {
+        document.getElementById('storyModal').style.display = 'none';
+        stopProgress();
+    }
+
+    function startProgress(onComplete) {
+        stopProgress();
+        const el = document.getElementById('storyProgress');
+        let pct = 0;
+        el.style.width = '0%';
+        progressInterval = setInterval(() => {
+            pct += 1.8; // speed -> adjust
+            el.style.width = pct + '%';
+            if (pct >= 100) {
+                stopProgress();
+                onComplete && onComplete();
+            }
+        }, 50);
+    }
+
+    function stopProgress() {
+        if (progressInterval) clearInterval(progressInterval);
+        progressInterval = null;
+        const el = document.getElementById('storyProgress');
+        if (el) el.style.width = '0%';
+    }
+
+    function markViewed(storyID) {
+        fetch('modul/story_view.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'storyID=' + encodeURIComponent(storyID)
+        }).catch(e => console.error(e));
+    }
+
+    function escapeHtml(s) {
+        if (!s) return '';
+        return String(s).replace(/[&<>"']/g, function(m) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            } [m];
+        });
+    }
+
+    // auto refresh stories tiap 30 detik
+    loadStories();
+    setInterval(loadStories, 30000);
+
+    // close modal on click outside
+    document.getElementById('storyModal').addEventListener('click', function(e) {
+        if (e.target === this) closeStory();
+    });
+    </script>
+    <!-- ================= END STORIES BAR ================= -->
 
     <div class="container container-main">
         <div class="row g-4">
@@ -370,6 +702,10 @@ $result = mysqli_query($conn, $q);
                     <a href="modul/grup.php" class="menu-item">
                         <i class="fa-solid fa-users me-2 text-primary"></i> Grup
                     </a>
+                    <a href="modul/marketplace.php" class="menu-item">
+                        <i class="fa-solid fa-store me-2 text-danger"></i> Marketplace
+                    </a>
+
 
 
                     <hr>
@@ -415,12 +751,13 @@ $result = mysqli_query($conn, $q);
           $likeCount = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM likes WHERE PostID=$postID"))['total'];
           $isLiked = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM likes WHERE PostID=$postID AND UserName='$username'")) > 0;
         ?>
-                <div class="post-card position-relative">
+                <div class="post-card position-relative" id="post<?= $postID ?>">
                     <h6><?= htmlspecialchars($row['UserName']) ?></h6>
                     <small><?= date("d M Y", strtotime($row['Date'])) ?> pukul <?= $row['Time'] ?></small>
                     <p class="mt-2 mb-1"><?= nl2br(htmlspecialchars($row['Text'])) ?></p>
                     <?php if ($row['ImageName']): ?>
-                    <img src="uploads/<?= htmlspecialchars($row['ImageName']) ?>" class="rounded mb-2 w-100">
+                    <img src="uploads/<?= htmlspecialchars($row['ImageName']) ?>" class="rounded mb-2 w-100"
+                        alt="post image">
                     <?php endif; ?>
 
                     <div class="post-actions">
@@ -512,6 +849,26 @@ $result = mysqli_query($conn, $q);
         }
     });
     </script>
+    <script>
+    let chatPopup = null;
+
+    function openChatPopup(username) {
+        if (chatPopup) chatPopup.remove();
+        fetch('modul/chat_popup.php?user=' + encodeURIComponent(username))
+            .then(res => res.text())
+            .then(html => {
+                const div = document.createElement('div');
+                div.innerHTML = html;
+                document.body.appendChild(div);
+                chatPopup = div;
+            });
+    }
+
+    function closeChatPopup() {
+        if (chatPopup) chatPopup.remove();
+    }
+    </script>
+
 
 </body>
 

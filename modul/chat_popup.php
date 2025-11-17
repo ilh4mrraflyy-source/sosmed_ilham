@@ -41,7 +41,7 @@ function fetchMessages() {
         .then(data => {
             document.getElementById('chatMessages').innerHTML = data;
             document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages')
-            .scrollHeight;
+                .scrollHeight;
         });
 }
 

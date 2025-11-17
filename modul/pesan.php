@@ -247,8 +247,6 @@ $currentChat = $_GET['chat'] ?? null;
             <a class="navbar-brand" href="../index.php">Facebook</a>
             <ul class="navbar-nav ms-auto align-items-center">
                 <li class="nav-item"><a href="../index.php" class="nav-link">Beranda</a></li>
-                <li class="nav-item"><a href="teman.php" class="nav-link">Teman</a></li>
-                <li class="nav-item"><a href="pesan.php" class="nav-link active">Pesan</a></li>
                 <li class="nav-item"><a href="permintaan_pesan.php" class="nav-link">Permintaan Pesan</a></li>
                 <li class="nav-item"><a href="../logout.php" class="nav-link">Keluar</a></li>
             </ul>

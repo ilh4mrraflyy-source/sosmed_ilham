@@ -109,7 +109,7 @@ if ($cat !== '') {
             <a class="navbar-brand" href="../index.php">Fesbuker Marketplace</a>
             <div class="d-flex gap-2">
                 <a href="../index.php" class="btn btn-light btn-sm">Beranda</a>
-                <a href="logout.php" class="btn btn-danger btn-sm">Keluar</a>
+                <a href="../logout.php" class="btn btn-danger btn-sm">Keluar</a>
             </div>
         </div>
     </nav>
